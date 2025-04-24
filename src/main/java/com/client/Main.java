@@ -1,5 +1,7 @@
 package com.client;
 
+import com.client.utils.UtilsViews;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -15,9 +17,10 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws Exception {
 
-        // Carrega la vista inicial des del fitxer FXML
-        Parent root = FXMLLoader.load(getClass().getResource("/assets/layout.fxml"));
-        Scene scene = new Scene(root);
+        // Carrega les vistes FXML
+        UtilsViews.addView(getClass(), "login", "/assets/layout.fxml");
+        UtilsViews.addView(getClass(), "main", "/assets/main.fxml");
+        Scene scene = new Scene(UtilsViews.parentContainer);
 
         stage.setScene(scene);
         stage.setTitle("JavaFX App");

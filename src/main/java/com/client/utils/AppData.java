@@ -11,6 +11,8 @@ import java.util.Map;
 
 public class AppData {
 
+    public static Map<String, Map<String, Map<String, Object>>> productes = new HashMap<>();
+
     public static List<Map<String, String>> getConfig() {
         List<Map<String, String>> config = List.of(new HashMap<>());
         try {
@@ -48,4 +50,25 @@ public class AppData {
         }
         
     }
+
+    public static Map<String, String> getConfigMap() {
+        Map<String, String> config = new HashMap<>();
+        try {
+            Path configPath = Paths.get(System.getProperty("user.home"), ".barretina", "CONFIG.xml");
+            if(Files.exists(configPath)) {
+                List<String> lines = Files.readAllLines(configPath);
+                for (String line : lines) {
+                    if (line.contains("<ubicacio>")) {
+                        config.put("ubicacio", line.replaceAll("<.*?>", "").trim());
+                    } else if (line.contains("<url>")) {
+                        config.put("url", line.replaceAll("<.*?>", "").trim());
+                    }
+                }
+            } 
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return config;
+    }
+
 }
