@@ -1,4 +1,5 @@
 com\client\utils\AppData.class
+com\client\controllers\Controller.class
 com\client\utils\Connection$1.class
 com\client\utils\Connection.class
 com\client\Main.class

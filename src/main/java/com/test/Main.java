@@ -18,7 +18,7 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            URI uri = new URI("ws://localhost:3000");
+            URI uri = new URI("wss://barretina7.ieti.site");
 
             client = new WebSocketClient(uri) {
                 @Override

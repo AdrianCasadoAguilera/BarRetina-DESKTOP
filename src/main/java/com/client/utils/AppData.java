@@ -9,9 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
+
 public class AppData {
 
-    public static Map<String, Map<String, Map<String, Object>>> productes = new HashMap<>();
+    public static ObservableMap<String, ObservableMap<String, Map<String, Object>>> productes = FXCollections.observableHashMap();
+
 
     public static List<Map<String, String>> getConfig() {
         List<Map<String, String>> config = List.of(new HashMap<>());
