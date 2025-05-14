@@ -1,0 +1,9 @@
+com\client\utils\AppData.class
+com\client\controllers\Controller.class
+com\client\utils\Connection$1.class
+com\client\utils\Connection.class
+com\client\Main.class
+com\test\Main$1.class
+com\client\utils\UtilsViews.class
+com\test\Main.class
+com\client\controllers\MainController.class
