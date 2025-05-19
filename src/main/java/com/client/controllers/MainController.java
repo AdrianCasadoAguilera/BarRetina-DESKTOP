@@ -1,5 +1,7 @@
 package com.client.controllers;
 
+import org.json.JSONObject;
+
 import com.client.utils.AppData;
 import com.client.utils.Connection;
 import com.client.utils.UtilsViews;
@@ -25,7 +27,11 @@ public class MainController {
         if(connected) {
             AppData.saveConfig(ubiInput.getText(), urlInput.getText());
             UtilsViews.setView("main");
-            Connection.getInstance().loadAllProducts();
+            conn.loadAllProducts();
+            JSONObject rst = new JSONObject();
+            rst.put("type", "registration");
+            rst.put("name", ubiInput.getText());
+            conn.send(rst);
             System.out.println(AppData.productes);
         } 
 

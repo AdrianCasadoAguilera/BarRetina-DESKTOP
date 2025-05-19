@@ -5,21 +5,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import org.json.JSONObject;
+
 import com.client.utils.AppData;
 import com.client.utils.Connection;
 import com.client.utils.UtilsViews;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class Main extends Application {
 
-    final int WINDOW_WIDTH = 600;
-    final int WINDOW_HEIGHT = 400;
+    final int WINDOW_WIDTH = 1280;
+    final int WINDOW_HEIGHT = 720;
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -40,7 +40,11 @@ public class Main extends Application {
 
             if(connected) {
                 UtilsViews.setView("main");
-                Connection.getInstance().loadAllProducts();
+                conn.loadAllProducts();
+                JSONObject rst = new JSONObject();
+                rst.put("type", "registration");
+                rst.put("name", config.get("ubicacio"));
+                conn.send(rst);
                 System.out.println(AppData.productes);
             } 
         } else {
