@@ -10,7 +10,9 @@ import javafx.scene.text.Text;
 import javafx.application.Platform;
 
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import com.client.utils.AppData;
 import com.client.utils.Utils;
@@ -30,8 +32,9 @@ public class Controller {
 
     private VBox contentBox;
 
-    // Associació entre el text visible de la comanda i el detall complet
-    private Map<String, JSONArray> tableOrders = new HashMap<>();
+    private Integer selectedTableNumber = null;
+    private Map<Integer, JSONArray> tableOrders = new HashMap<>();
+
 
     @FXML
     public void initialize() {
@@ -108,7 +111,7 @@ public class Controller {
             orderDetail.getChildren().clear();
             tableOrders.clear();
 
-            final Map<HBox, String> boxToEntryMap = new HashMap<>();
+            final Map<HBox, Integer> boxToEntryMap = new HashMap<>();
             final HBox[] selectedBox = {null}; // Referència mutable al box seleccionat
 
             for (int i = 0; i < tables.length(); i++) {
@@ -124,20 +127,18 @@ public class Controller {
 
                 for (int j = 0; j < items.length(); j++) {
                     JSONObject item = items.getJSONObject(j);
-                    int amount = item.getInt("amount");
+                    totalQuantity += 1;
                     float price = item.has("price") ? item.getFloat("price") : 0f;
-
-                    totalQuantity += amount;
-                    totalPrice += amount * price;
+                    totalPrice += price;
                 }
 
-                String entry = String.format("Taula %d - %d productes - Total: %.2f €", number, totalQuantity, totalPrice);
-                tableOrders.put(entry, items);
+                String entry = String.format("Taula %d - %d productes - Total: %.2f €", number, totalQuantity, totalPrice); 
+                tableOrders.put(number, items);
 
                 // Crear contenidor clicable
                 HBox orderBox = new HBox();
                 orderBox.setStyle("-fx-background-color: #F4C430; -fx-padding: 8px; -fx-background-radius: 6px;");
-                orderBox.setMaxWidth(250);
+                //orderBox.setMaxWidth(250);
                 orderBox.setMinHeight(30);
                 orderBox.setCursor(javafx.scene.Cursor.HAND);
 
@@ -145,7 +146,7 @@ public class Controller {
                 entryText.setStyle("-fx-font-size: 16px; -fx-fill: #000;");
                 orderBox.getChildren().add(entryText);
 
-                boxToEntryMap.put(orderBox, entry);
+                boxToEntryMap.put(orderBox, number);
 
                 // Hover
                 orderBox.setOnMouseEntered(e -> {
@@ -173,41 +174,119 @@ public class Controller {
                     orderBox.setStyle("-fx-background-color:rgb(204, 133, 0); -fx-padding: 8px; -fx-background-radius: 6px;");
                     selectedBox[0] = orderBox;
 
-                    String selectedEntry = boxToEntryMap.get(orderBox);
-                    showOrderDetail(tableOrders.get(selectedEntry));
+                    int tableNum = boxToEntryMap.get(orderBox);
+                    selectedTableNumber = tableNum;
+                    JSONArray tableItems = tableOrders.get(tableNum);
+                    if (tableItems != null) {
+                        showOrderDetail(tableItems, tableNum);
+                    }
                 });
 
                 ordersBox.getChildren().add(orderBox);
+
+                if (selectedTableNumber != null && selectedTableNumber == number) {
+                    orderBox.setStyle("-fx-background-color:rgb(204, 133, 0); -fx-padding: 8px; -fx-background-radius: 6px;");
+                    selectedBox[0] = orderBox;
+
+                    JSONArray tableItems = tableOrders.get(number);
+                    if (tableItems != null) {
+                        showOrderDetail(tableItems, number);
+                    }
+                }
             }
         });
     }
 
-    private void showOrderDetail(JSONArray items) {
+    private void showOrderDetail(JSONArray items, int tableNumber) {
         orderDetail.getChildren().clear();
+
+        // Agrupem per producte, guardant estats i preus de cada unitat
+        Map<String, List<JSONObject>> agrupat = new HashMap<>();
 
         for (int i = 0; i < items.length(); i++) {
             JSONObject item = items.getJSONObject(i);
             String product = Utils.capitalize(item.getString("product"));
-            int amount = item.getInt("amount");
-            float price = item.getFloat("price");
 
-            HBox productBox = new HBox(8); 
-            productBox.setMaxWidth(Double.MAX_VALUE);
-            productBox.setPrefWidth(Double.MAX_VALUE);
-            productBox.setStyle(i % 2 == 0
+            agrupat.computeIfAbsent(product, k -> new ArrayList<>()).add(item);
+        }
+
+        int i = 0;
+        for (Map.Entry<String, List<JSONObject>> entry : agrupat.entrySet()) {
+            String nomProducte = entry.getKey();
+            List<JSONObject> unitats = entry.getValue();
+            int quantitat = unitats.size();
+            float preuUnitari = unitats.get(0).getFloat("price"); // assumim mateix preu
+            float total = preuUnitari * quantitat;
+
+            // Caixa principal per al producte
+            VBox producteBox = new VBox(4);
+            producteBox.setStyle(i % 2 == 0
                 ? "-fx-background-color: rgb(223, 223, 223); -fx-padding: 8px;"
                 : "-fx-background-color: rgb(202, 202, 202); -fx-padding: 8px;");
 
-            Text producte = new Text("x"+ amount+ " " + product);
-            producte.setStyle("-fx-font-size: 14px;");
-            HBox.setHgrow(producte, Priority.ALWAYS);
+            // Primera línia: xN Producte + Total €
+            HBox resumBox = new HBox(8);
+            Text resumText = new Text("x" + quantitat + " " + nomProducte);
+            resumText.setStyle("-fx-font-size: 14px;");
+            HBox.setHgrow(resumText, Priority.ALWAYS);
 
-            Text preu = new Text(String.format("%.2f €", price*amount));
-            preu.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+            Text preuText = new Text(String.format("%.2f €", total));
+            preuText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
-            productBox.getChildren().addAll(producte, preu);
-            orderDetail.getChildren().add(productBox);
+            resumBox.getChildren().addAll(resumText, preuText);
+            producteBox.getChildren().add(resumBox);
+
+            int tableIndex = tableNumber;
+
+            for (int k = 0; k < unitats.size(); k++) {
+                JSONObject unitat = unitats.get(k);
+                String currentEstat = unitat.optString("state", "DEMANAT").toUpperCase();
+
+                HBox estatsBox = new HBox(10);
+                estatsBox.setStyle("-fx-padding: 2 0 0 20;");
+
+                String[] possiblesEstats = {"DEMANAT", "PREPARACIO", "LLEST", "PAGAT"};
+                for (String estat : possiblesEstats) {
+                    Text estatText = new Text(
+                        estat.equals(currentEstat) ? "[" + Utils.capitalize(estat.toLowerCase()) + "]" : Utils.capitalize(estat.toLowerCase())
+                    );
+                    estatText.setStyle(estat.equals(currentEstat)
+                        ? "-fx-font-size: 12px; -fx-fill: #000; -fx-font-weight: bold; -fx-underline: true;"
+                        : "-fx-font-size: 12px; -fx-fill: #666; -fx-cursor: hand;"
+                    );
+
+                    final int itemIndex = findItemIndex(items, unitat);
+                    final String estatFinal = estat;
+                    estatText.setOnMouseClicked(e -> {
+                        JSONObject msg = new JSONObject();
+                        msg.put("type", "setItemEstat");
+                        msg.put("tableNum", tableIndex);
+                        msg.put("itemIndex", itemIndex);
+                        msg.put("estat", estatFinal);
+
+                        com.client.utils.Connection.getInstance().send(msg);
+                    });
+
+                    estatsBox.getChildren().add(estatText);
+                }
+
+                producteBox.getChildren().add(estatsBox);
+            }
+
+
+            orderDetail.getChildren().add(producteBox);
+            i++;
         }
     }
+    private int findItemIndex(JSONArray items, JSONObject target) {
+        for (int i = 0; i < items.length(); i++) {
+            if (items.get(i).toString().equals(target.toString())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
 
 }

@@ -41,6 +41,11 @@ public class Connection {
                 @Override
                 public void onOpen(ServerHandshake handshake) {
                     System.out.println("Connectat al servidor WebSocket!");
+                    JSONObject registration = new JSONObject();
+                    registration.put("type", "registration");
+                    registration.put("name", "Main"); 
+                    conn.send(registration.toString());
+
                     JSONObject request = new JSONObject();
                     request.put("type", "getTables");
                     conn.send(request.toString());
@@ -48,8 +53,8 @@ public class Connection {
 
                 @Override
                 public void onMessage(String message) {
-                    handleMessage(message);
-                    // System.out.println("Missatge rebut: " + message);
+                    Platform.runLater(() -> handleMessage(message));
+                    
                 }
 
                 @Override
